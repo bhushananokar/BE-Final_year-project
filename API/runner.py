@@ -1,6 +1,6 @@
 import requests
 
 url = "http://localhost:8000/predict"
-symptoms = "fever 101F, continuous cough, fatigue, loss of appetite"
+symptoms = "Frequent urination,Increased thirst,Unexplained weight loss,Fatigue , Blurred vision ,Slow-healing sores"
 response = requests.post(url, json={"symptoms": symptoms})
-print(response.json())
+print(response.text)
