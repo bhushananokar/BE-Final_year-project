@@ -4,6 +4,7 @@ import google.generativeai as genai
 from typing import Dict, List
 import json
 import os
+from fastapi.responses import PlainTextResponse 
 genai.configure(api_key='')
 model = genai.GenerativeModel('gemini-pro')
 app = FastAPI(title="Disease Prediction API",
@@ -42,18 +43,12 @@ def parse_gemini_response(response: str) -> Dict:
         return data
     except json.JSONDecodeError:
         raise ValueError("Invalid JSON response from model")
-@app.post("/predict", response_model=PredictionResponse)
+@app.post("/predict", response_class=PlainTextResponse)  # Change response class to PlainTextResponse
 async def predict_disease(input_data: SymptomsInput):
     try:
         prompt = generate_prompt(input_data.symptoms)
         response = model.generate_content(prompt)
-        prediction = parse_gemini_response(response.text)
-        return PredictionResponse(
-            disease=prediction["disease"],
-            confidence=prediction["confidence"],
-            remedies=prediction["remedies"],
-            precautions=prediction["precautions"]
-        )
+        return response.text  # Return the raw text directly
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 @app.get("/")
