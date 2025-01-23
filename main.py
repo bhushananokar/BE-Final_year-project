@@ -54,6 +54,6 @@ async def predict_disease(input_data: SymptomsInput):
 @app.get("/")
 async def root():
     return {"message": "Disease Prediction API is running. Send POST request to /predict endpoint with symptoms."}
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+#if __name__ == "__main__":
+ #   import uvicorn
+  #  uvicorn.run(app, host="0.0.0.0", port=8000)
