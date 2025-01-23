@@ -5,7 +5,7 @@ from typing import Dict, List
 import json
 import os
 from fastapi.responses import PlainTextResponse 
-genai.configure(api_key='AIzaSyDdLLzxrYEXWFOZYTc1kOuMoQVNsdV6qNo')
+genai.configure(api_key='')
 model = genai.GenerativeModel('gemini-pro')
 app = FastAPI(title="Disease Prediction API",
              description="API for predicting diseases based on symptoms using Google's Gemini model")
