@@ -11,7 +11,7 @@ from typing import Dict, List, Optional
 
 # Configure Gemini
 genai.configure(api_key='AIzaSyAuU21y64bm80r-5mxq2IUbBH1VKd3sZ28')
-text_model = genai.GenerativeModel('gemini-pro-2.0')
+text_model = genai.GenerativeModel('gemini-2.0-pro')
 
 # Generation configuration
 generation_config = {
