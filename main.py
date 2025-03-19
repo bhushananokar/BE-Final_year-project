@@ -30,7 +30,7 @@ model = genai.GenerativeModel(
 
 app = FastAPI(
     title="Health API",
-    description="API for disease prediction, health recommendations, and blood report analysis"
+    description="API for disease prediction, health recommendations, blood report analysis, and disease image analysis"
 )
 
 def upload_to_gemini(path, mime_type=None):
@@ -119,6 +119,22 @@ def generate_blood_report_prompt() -> str:
 
     Please provide the analysis in a clear, readable format."""
 
+def generate_disease_image_prompt() -> str:
+    return """Analyze this medical image (which may be an X-ray, CT scan, MRI, or other medical imaging) and provide:
+
+    1. Predicted disease or condition
+    2. Severity level (Mild, Moderate, Severe, or Critical)
+    3. Confidence in the diagnosis (percentage)
+    4. Key findings visible in the image
+    5. Recommendations based on the findings
+
+    Format your response as follows:
+    DISEASE: [disease name]
+    SEVERITY: [severity level]
+    CONFIDENCE: [confidence percentage]
+    FINDINGS: [list key observations from the image]
+    RECOMMENDATIONS: [list recommendations]"""
+
 @app.post("/predict", response_class=PlainTextResponse)
 async def predict_disease(input_data: SymptomsInput):
     try:
@@ -169,6 +185,43 @@ async def analyze_blood_report(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/analyze-disease-image", response_class=PlainTextResponse)
+async def analyze_disease_image(file: UploadFile = File(...)):
+    try:
+        # Validate file type
+        valid_mime_types = ["image/jpeg", "image/png", "image/dicom", "image/tiff"]
+        if file.content_type not in valid_mime_types and not file.content_type.startswith("application/dicom"):
+            raise HTTPException(status_code=400, detail=f"Invalid file type. Supported types: {', '.join(valid_mime_types)}")
+
+        # Create a temporary file to save the uploaded image
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as temp_file:
+            temp_file.write(await file.read())
+            temp_file_path = temp_file.name
+
+        # Upload the file to Gemini
+        uploaded_file = upload_to_gemini(temp_file_path, mime_type=file.content_type)
+
+        # Start a chat session with the uploaded file
+        chat_session = model.start_chat(
+            history=[
+                {
+                    "role": "user",
+                    "parts": [uploaded_file],
+                },
+            ]
+        )
+
+        # Generate disease analysis
+        response = chat_session.send_message(generate_disease_image_prompt())
+
+        # Clean up the temporary file
+        os.unlink(temp_file_path)
+
+        return response.text
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/")
 async def root():
     return {
@@ -176,7 +229,8 @@ async def root():
         "endpoints": {
             "/predict": "Disease prediction based on symptoms",
             "/health-recommendations": "Personalized health recommendations",
-            "/report": "Blood report analysis from image"
+            "/report": "Blood report analysis from image",
+            "/analyze-disease-image": "Disease analysis from medical images including X-rays"
         },
         "example_requests": {
             "predict": {
@@ -192,9 +246,10 @@ async def root():
                 "existing_conditions": ["asthma"],
                 "medications": ["albuterol"]
             },
-            "report": "POST multipart/form-data with image file"
+            "report": "POST multipart/form-data with blood report image file",
+            "analyze-disease-image": "POST multipart/form-data with medical image file (X-ray, CT scan, etc.)"
         }
     }
+
 #if __name__ == "__main__":
- #   import uvicorn
-  #  uvicorn.run(app, host="0.0.0.0", port=8000)
+#   uvicorn.run(app, host="0.0.0.0", port=8000)
