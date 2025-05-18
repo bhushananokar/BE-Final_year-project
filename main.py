@@ -9,10 +9,14 @@ from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field, field_validator
 from typing import Dict, List, Optional
 
-# Configure Gemini
-genai.configure(api_key='AIzaSyAuU21y64bm80r-5mxq2IUbBH1VKd3sZ28')
-text_model = genai.GenerativeModel('gemini-2.0-flash')
+# Get API key from environment variable
+api_key = os.environ.get('GEMINI_API_KEY')
+if not api_key:
+    raise ValueError("GEMINI_API_KEY environment variable is not set")
 
+# Configure Gemini
+genai.configure(api_key=api_key)
+text_model = genai.GenerativeModel('gemini-2.0-flash')
 # Generation configuration
 generation_config = {
     "temperature": 1,
